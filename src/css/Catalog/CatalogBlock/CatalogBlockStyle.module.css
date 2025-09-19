@@ -1,0 +1,17 @@
+.CatalogBlock{
+    display: flex;
+    flex-direction: column;
+}
+
+.CatalogBlockH1Container{
+    text-align: center;
+}
+
+.CatalogBlockH1{
+    font-size: 4vh;
+}
+
+.CatalogBlockContainer{
+    width: 100%;
+    margin-bottom: 24%;
+}

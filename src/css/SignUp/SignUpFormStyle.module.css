@@ -1,0 +1,44 @@
+.SignUpForm{
+    background-color: white;
+    width: 100%;
+    height: 90vh;
+}
+
+.SignInFormH1{
+    font-size: 4vh;
+}
+
+.SignUpFormForm{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 2%;
+    width: 100%;
+    height: 77vh;
+}
+
+.SignUpFormFormInput{
+    height: 8%;
+    width: 44%;
+    text-indent: 4%;
+    color: #9E9E9E;
+}
+
+.SignUpFormFormLink{
+    height: 8%;
+    width: 44%;
+}
+
+.SignUpFormFormButton{
+    height: 100%;
+    width: 100%;
+    background-color: #000033;
+    border-color: #000033;
+    color: white;
+}
+
+.SignUpFormFormText{
+    font-size: 1vh;
+    color: #9E9E9E;
+}

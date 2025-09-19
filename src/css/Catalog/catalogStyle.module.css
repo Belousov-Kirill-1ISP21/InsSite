@@ -1,0 +1,26 @@
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+}
+
+.wrapper {
+    width: 100%;
+    display: flex;
+    flex-direction: row; 
+}
+
+.main{
+    width: 87%;
+    display: flex;
+    flex-direction: column; 
+}
+
+.SideBackgroundContainer{
+    width: 13%;
+    flex-grow: 1;
+}

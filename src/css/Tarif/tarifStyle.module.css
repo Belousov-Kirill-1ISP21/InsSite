@@ -1,0 +1,33 @@
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+}
+
+.wrapper {
+    width: 100%;
+    min-height: 110vh;
+    display: flex;
+    flex-direction: row; 
+}
+
+.main{
+    width: 87%;
+    height: 100%;
+}
+
+.SideBackgroundContainer{
+    width: 13%;
+    flex-grow: 1;
+}
+
+.TarifBlockContainer{
+    height: 77vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}

@@ -1,0 +1,61 @@
+.CatalogCard{
+    background-color: #000033;
+    margin: 2%;
+    float: left;
+    width: 20%;
+    height: 69%;
+    border-radius: 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.CatalogCardImgContainer{
+    height: 44%;
+    width: 77%;
+}
+
+.CatalogCardImg{
+    height: 100%;
+    width: 100%;
+}
+
+.CatalogCardInfoContainer{
+    height: 44%;
+    width: 69%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4%;
+}
+
+.CatalogCardH1{
+    color: white;
+    font-size: 2vh;
+    margin-bottom: 0;
+    text-align: left;
+}
+
+.CatalogCardText{
+    color: white;
+    font-size: 1.5vh;
+    margin-top: 0;
+    text-align: left;
+}
+
+.CatalogCardLink{
+    width: 100%;
+    height: 27%;
+    text-align: center;
+}
+
+.CatalogCardButton{
+    width: 100%;
+    height: 100%;
+    color: white;
+    background-color: #4669B0;
+    border-color: #4669B0;
+    border-radius: 14px;
+    font-size: 2vh;
+}

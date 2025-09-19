@@ -1,0 +1,78 @@
+.TarifBlock{
+    background-color: #000033;
+    width: 88%;
+    height: 69vh;
+    border-radius: 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4%;
+}
+
+.TarifBlockH1Container{
+    text-align: center;
+}
+
+.TarifBlockH1{
+    color: white;
+}
+
+.TarifBlockInfoContainer{
+    height: 60%;
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 4%;
+}
+
+.TarifBlockInfoImgContainer{
+    height: 100%;
+    width: 44%;
+}
+
+.TarifBlockImg{
+    height: 100%;
+    width: 100%;
+}
+
+.TarifBlockInfoTextContainer{
+    height: 100%;
+    width: 44%;
+}
+
+.TarifBlockText{
+    color: white;
+    display: inline-block;
+    font-size: 2.5vh;
+}
+
+.TarifBlockPrice{
+    color: white;
+    display: inline-block;
+    font-size: 2.6vh;
+    font-weight: bold;
+}
+
+.TarifBlockButtonContainer{
+    text-align: center;
+    width: 100%;
+    height: 20%;
+}
+
+.TarifBlockLink{
+    width: 100%;
+    height: 100%;
+}
+
+.TarifBlockButton{
+    width: 69%;
+    height: 69%;
+    color: white;
+    background-color: #4669B0;
+    border-radius: 14px;
+    font-size: 2vh;
+    border: none;
+}
