@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Route, Routes as RouterRoutes } from 'react-router-dom';
 
 import {HomePage} from './pages/Home';
@@ -9,9 +9,14 @@ import {ProfilePage} from './pages/Profile';
 import {SignInPage} from './pages/SignIn';
 import {SignUpPage} from './pages/SignUp';
 import {TarifPage} from './pages/Tarif';
-import AdminPanel from './pages/AdminPanel';
+import {AdminPanel} from './pages/AdminPanel';
+import { prefetchCatalogData } from './hooks/usePrefetching'; 
 
 const Routes = () => {
+    useEffect(() => {
+        prefetchCatalogData().catch(console.error);
+    }, []);
+
     return (
         <RouterRoutes>
             <Route path="/" element={<HomePage/>}/>

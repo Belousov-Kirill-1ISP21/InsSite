@@ -1,16 +1,16 @@
 import styles from '../../../css/Profile/MainPanel/MainPanelStyle.module.css'
 import { MainPanelLine } from './MainPanelLine'
 
-const MainPanelLineProps = [
-    {id:0, MainPanelLineH1:'Фамилия', MainPanelLineText: 'Фамилия'},
-    {id:1, MainPanelLineH1:'Имя', MainPanelLineText: 'Имя'},
-    {id:2, MainPanelLineH1:'Отчество', MainPanelLineText: 'Отчество'},
-    {id:3, MainPanelLineH1:'Email', MainPanelLineText: 'yourname@gmail.com'},
-    {id:4, MainPanelLineH1:'Телефон', MainPanelLineText: '+79999994444'},
-];
+export const MainPanel = (props) => {
+    const { MainPanelHeadH1, MainPanelHeadText, profileData } = props
+    
+    const MainPanelLineProps = [
+        {id:0, MainPanelLineH1:'Имя', MainPanelLineText: profileData?.name || 'Не указано'},
+        {id:1, MainPanelLineH1:'Email', MainPanelLineText: profileData?.email || 'Не указан'},
+        {id:2, MainPanelLineH1:'Телефон', MainPanelLineText: profileData?.phone || 'Не указан'},
+        {id:3, MainPanelLineH1:'Имя пользователя', MainPanelLineText: profileData?.username || 'Не указано'},
+    ];
 
-export const MainPanel =(props)=>{
-    const {MainPanelHeadH1, MainPanelHeadText} = props
     return <div className={styles.MainPanel}>
         
         <div className={styles.MainPanelHead}>

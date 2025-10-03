@@ -1,0 +1,2439 @@
+﻿
+
+=== all_code.txt ===
+
+
+
+
+=== all_code.txt ===
+
+
+
+
+=== api.js ===
+
+
+import axios from 'axios';
+
+const API_BASE_URL = 'https://jsonplaceholder.typicode.com';
+
+const transformUserToClient = (user) => ({
+  id: user.id,
+  name: user.name,
+  phone: user.phone || `+7 (999) ${100 + user.id}-${1000 + user.id}`,
+  email: user.email,
+  username: user.username
+});
+
+const transformPostToPolicy = (post, user) => ({
+  id: post.id,
+  policyNumber: `POL-${String(post.id).padStart(3, '0')}`,
+  clientName: user.name,
+  insuranceType: getInsuranceType(post.id),
+  coverage: getCoverageType(post.id),
+  premium: calculatePrice(post.id),
+  startDate: new Date(Date.now() - (post.id * 86400000)).toISOString().split('T')[0],
+  endDate: new Date(Date.now() + (365 * 86400000) - (post.id * 86400000)).toISOString().split('T')[0],
+  status: post.id % 3 === 0 ? 'Завершен' : 'Активен',
+  userId: post.userId
+});
+
+const getInsuranceType = (id) => {
+  const types = ['Автострахование', 'Медицинское страхование', 'Имущественное страхование', 'Страхование жизни'];
+  return types[id % types.length];
+};
+
+const getCoverageType = (id) => {
+  const coverages = ['Полное', 'Стандартное', 'Базовое'];
+  return coverages[id % coverages.length];
+};
+
+const calculatePrice = (id) => Math.floor(5000 + (id * 1000));
+
+export const getInsurancePolicies = async () => {
+  try {
+    const [postsResponse, usersResponse] = await Promise.all([
+      axios.get(`${API_BASE_URL}/posts`),
+      axios.get(`${API_BASE_URL}/users`)
+    ]);
+
+    const users = usersResponse.data.reduce((acc, user) => {
+      acc[user.id] = user;
+      return acc;
+    }, {});
+
+    const policies = postsResponse.data.slice(0, 10).map(post => 
+      transformPostToPolicy(post, users[post.userId] || { name: 'Неизвестный клиент', id: post.userId })
+    );
+
+    return policies;
+  } catch (error) {
+    throw new Error(`Ошибка при получении страховых полисов: ${error.message}`);
+  }
+};
+
+export const getClients = async () => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/users`);
+    return response.data.map(transformUserToClient);
+  } catch (error) {
+    throw new Error(`Ошибка при получении клиентов: ${error.message}`);
+  }
+};
+
+export const createInsurancePolicy = async (policyData) => {
+  try {
+    const response = await axios.post(`${API_BASE_URL}/posts`, {
+      title: `Insurance Policy for ${policyData.clientName}`,
+      body: JSON.stringify(policyData),
+      userId: 1
+    });
+
+    const newPolicy = {
+      id: response.data.id,
+      policyNumber: `POL-${String(response.data.id).padStart(3, '0')}`,
+      ...policyData,
+      status: 'Активен',
+      userId: 1
+    };
+
+    return newPolicy;
+  } catch (error) {
+    throw new Error(`Ошибка при создании полиса: ${error.message}`);
+  }
+};
+
+export const updateInsurancePolicy = async (policyId, policyData) => {
+  try {
+    const response = await axios.put(`${API_BASE_URL}/posts/${policyId}`, {
+      id: policyId,
+      title: `Updated Insurance Policy for ${policyData.clientName}`,
+      body: JSON.stringify(policyData),
+      userId: 1
+    });
+
+    const updatedPolicy = {
+      id: policyId,
+      policyNumber: `POL-${String(policyId).padStart(3, '0')}`,
+      ...policyData,
+      userId: 1
+    };
+
+    return updatedPolicy;
+  } catch (error) {
+    throw new Error(`Ошибка при обновлении полиса: ${error.message}`);
+  }
+};
+
+export const deleteInsurancePolicy = async (policyId) => {
+  try {
+    await axios.delete(`${API_BASE_URL}/posts/${policyId}`);
+    return policyId;
+  } catch (error) {
+    throw new Error(`Ошибка при удалении полиса: ${error.message}`);
+  }
+};
+
+
+=== App.js ===
+
+
+import styles from './css/appStyle.module.css';
+import React from 'react';
+import { BrowserRouter as Router } from 'react-router-dom';
+import Routes from './Routes'; 
+import { AuthProvider } from './scripts/AuthContext.js';
+
+function App() {
+
+  return (
+    
+    <div className={styles.App}>
+      <AuthProvider>
+        <Router>
+          <Routes />
+        </Router>
+      </AuthProvider>
+
+    </div>
+  );
+}
+
+export default App;
+
+
+
+=== App.test.js ===
+
+
+import { render, screen } from '@testing-library/react';
+import App from './App';
+
+test('renders learn react link', () => {
+  render(<App />);
+  const linkElement = screen.getByText(/learn react/i);
+  expect(linkElement).toBeInTheDocument();
+});
+
+
+=== index.css ===
+
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+
+=== index.js ===
+
+
+import React from 'react';
+import './index.css';
+import App from './App';
+import { createRoot } from 'react-dom/client';
+
+
+// Жёсткий сброс кеша перед рендерингом
+if (module.hot) {
+  module.hot.dispose(() => {
+    window.location.reload(); // Полная перезагрузка вместо HMR
+  });
+}
+
+const container = document.getElementById('root');
+const root = createRoot(container);
+
+root.render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);
+
+
+=== reportWebVitals.js ===
+
+
+const reportWebVitals = onPerfEntry => {
+  if (onPerfEntry && onPerfEntry instanceof Function) {
+    import('web-vitals').then(({ getCLS, getFID, getFCP, getLCP, getTTFB }) => {
+      getCLS(onPerfEntry);
+      getFID(onPerfEntry);
+      getFCP(onPerfEntry);
+      getLCP(onPerfEntry);
+      getTTFB(onPerfEntry);
+    });
+  }
+};
+
+export default reportWebVitals;
+
+
+=== Routes.js ===
+
+
+import React from 'react';
+import { Route, Routes as RouterRoutes } from 'react-router-dom';
+
+import {HomePage} from './pages/Home';
+import {AboutUsPage} from './pages/AboutUs';
+import {CatalogPage} from './pages/Catalog';
+import {OrderPage} from './pages/Order';
+import {ProfilePage} from './pages/Profile';
+import {SignInPage} from './pages/SignIn';
+import {SignUpPage} from './pages/SignUp';
+import {TarifPage} from './pages/Tarif';
+import AdminPanel from './pages/AdminPanel';
+
+const Routes = () => {
+    return (
+        <RouterRoutes>
+            <Route path="/" element={<HomePage/>}/>
+            <Route path="/AboutUs" element={<AboutUsPage/>} />
+            <Route path="/Catalog" element={<CatalogPage/>} />
+            <Route path="/Order" element={<OrderPage/>} />
+            <Route path="/Profile" element={<ProfilePage/>} />
+            <Route path="/SignIn" element={<SignInPage/>} />
+            <Route path="/SignUp" element={<SignUpPage/>} />
+            <Route path="/Tarif" element={<TarifPage/>}/>
+            <Route path="/AdminPanel" element={<AdminPanel/>}/>
+        </RouterRoutes>
+    );
+};
+
+export default Routes;
+
+
+=== setupTests.js ===
+
+
+// jest-dom adds custom jest matchers for asserting on DOM nodes.
+// allows you to do things like:
+// expect(element).toHaveTextContent(/react/i)
+// learn more: https://github.com/testing-library/jest-dom
+import '@testing-library/jest-dom';
+
+
+=== AdminPanelStyle.module.css ===
+
+
+.AdminPanel {
+  padding: 1.5%;
+  max-width: 1400px;
+  margin: 0 auto;
+  min-height: 100vh;
+  background-color: #f5f5f5;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2%;
+  padding: 1.5%;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.header h1 {
+  margin: 0;
+  color: #000033;
+  font-size: 2.5rem;
+}
+
+.header button {
+  background-color: #000033;
+  color: white;
+  border: none;
+  padding: 1% 2%;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.3s;
+}
+
+.header button:hover {
+  background-color: #1a1a4d;
+}
+
+.header button:disabled {
+  background-color: #666;
+  cursor: not-allowed;
+}
+
+.error {
+  background-color: #ffebee;
+  color: #c62828;
+  padding: 1%;
+  border-radius: 8px;
+  margin-bottom: 1.5%;
+  border: 1px solid #ffcdd2;
+  font-weight: 500;
+}
+
+.loading {
+  text-align: center;
+  padding: 2%;
+  color: #000033;
+  font-size: 1.2rem;
+  background: white;
+  border-radius: 10px;
+  margin-bottom: 1.5%;
+}
+
+.sections {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr;
+  gap: 2%;
+}
+
+.section {
+  background: white;
+  padding: 2%;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.section h2 {
+  margin-top: 0;
+  color: #000033;
+  border-bottom: 2px solid #000033;
+  padding-bottom: 2%;
+  margin-bottom: 2%;
+  font-size: 1.8rem;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5%;
+}
+
+.form input,
+.form select {
+  padding: 4.5%;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: border-color 0.3s;
+  margin-top: 2%;
+  margin-bottom: 2%;
+}
+
+.form input:focus,
+.form select:focus {
+  outline: none;
+  border-color: #000033;
+}
+
+.form button {
+  background-color: #000033;
+  color: white;
+  border: none;
+  padding: 4%;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1.1rem;
+  font-weight: 600;
+  transition: background-color 0.3s;
+  margin-top: 1.5%;
+}
+
+.form button:hover {
+  background-color: #1a1a4d;
+}
+
+.form button:disabled {
+  background-color: #666;
+  cursor: not-allowed;
+}
+
+.policies {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5%;
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.policy {
+  background: #f8f9ff;
+  padding: 2%;
+  border-radius: 10px;
+  border-left: 5px solid #000033;
+  transition: transform 0.2s;
+}
+
+.policy:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+}
+
+.policy.активен {
+  border-left-color: #28a745;
+  background: #f0fff4;
+}
+
+.policy.завершен {
+  border-left-color: #6c757d;
+  background: #f8f9fa;
+}
+
+.policyHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2%;
+}
+
+.policyHeader h3 {
+  margin: 0;
+  color: #000033;
+  font-size: 1.4rem;
+}
+
+.status {
+  padding: 0.8% 1.5%;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.status.активен {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.status.завершен {
+  background-color: #e2e3e5;
+  color: #383d41;
+}
+
+.policyInfo {
+  margin-bottom: 2%;
+}
+
+.policyInfo p {
+  margin: 1% 0;
+  color: #555;
+  line-height: 1.5;
+}
+
+.policyInfo strong {
+  color: #000033;
+}
+
+.policyActions {
+  display: flex;
+  gap: 1.5%;
+}
+
+.policyActions button {
+  padding: 1.5% 2.5%;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.3s;
+}
+
+.policyActions button:first-child {
+  background-color: #4669B0;
+  color: white;
+}
+
+.policyActions button:first-child:hover {
+  background-color: #3a5a9d;
+}
+
+.policyActions button.delete {
+  background-color: #dc3545;
+  color: white;
+}
+
+.policyActions button.delete:hover {
+  background-color: #c82333;
+}
+
+.policyActions button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.editForm {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5%;
+}
+
+.editForm input,
+.editForm select {
+  padding: 1.5%;
+  border: 2px solid #ddd;
+  border-radius: 6px;
+  font-size: 1rem;
+}
+
+.editActions {
+  display: flex;
+  gap: 1.5%;
+  margin-top: 2%;
+}
+
+.editActions button {
+  padding: 1.5% 3%;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.3s;
+}
+
+.editActions button:first-child {
+  background-color: #28a745;
+  color: white;
+}
+
+.editActions button:first-child:hover {
+  background-color: #218838;
+}
+
+.editActions button:last-child {
+  background-color: #6c757d;
+  color: white;
+}
+
+.editActions button:last-child:hover {
+  background-color: #5a6268;
+}
+
+.editActions button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+
+=== appStyle.module.css ===
+
+
+@font-face {
+    font-family: 'Verdana';
+    src: url('../assets/fonts/Verdana.ttf');
+}
+
+*{
+    font-family: 'Verdana';
+}
+
+.App {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: white;
+	grid-gap:4%;
+}
+
+#root {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: white;
+	grid-gap:4%;
+}
+
+
+
+=== AboutTitleBlockStyle.module.css ===
+
+
+.AboutTitleBlock{
+    height: 69vh;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.AboutTitleBlockImg{
+    height: 100%;
+    width: 69%;
+    margin-right: 10%;
+}
+
+
+=== aboutUsStyle.module.css ===
+
+
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+}
+
+.wrapper {
+    width: 100%;
+    height: 100%;
+}
+
+
+=== AboutBlockStyle.module.css ===
+
+
+.AboutBlock{
+    height: 24%;
+    width: 100%;
+    margin-top: 4%;
+    margin-bottom: 4%;
+}
+
+.AboutBlockContainer{
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+}
+
+.AboutBlockImgContainer{
+    height: 100%;
+    width: 50%;
+}
+
+.AboutBlockTextContainer{
+    width: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    padding-left: 4%;
+    padding-right: 4%;
+}
+
+.AboutBlockRightTextContainer{
+    width: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: flex-start;
+    padding-left: 4%;
+    padding-right: 4%;
+}
+
+.AboutBlockImg{
+    height: 100%;
+    width: 100%;
+}
+
+.AboutBlockH1{
+    font-size: 6vh;
+    text-align: left;
+}
+
+.AboutBlockRightH1{
+    font-size: 6vh;
+    text-align: right;
+}
+
+.AboutBlockText{
+    font-size: 3vh;
+    color: #848383;
+    text-align: left;
+}
+
+.AboutBlockRightText{
+    font-size: 3vh;
+    color: #848383;
+    text-align: right;
+}
+
+
+
+
+=== AboutMainBlockStyle.module.css ===
+
+
+.AboutMainBlock{
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.AboutMainBlockH1Container{
+    margin-top: 4%;
+    width: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.AboutMainBlockH1{
+    font-size: 4vh;
+}
+
+.AboutMainBlockBlockContainer{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+
+=== AuthCheckBoxStyle.module.css ===
+
+
+.AuthCheckboxContainer{
+    width: 44%;
+    display: inline-block;
+}
+
+.AuthCheckbox{
+    display: inline-block;
+    margin-right: 2%;
+}
+
+.AuthCheckboxLabel{
+    display: inline-block;
+    margin-left: 2%;
+    margin-right: 2%;
+    font-size: 1.5vh;
+    color: #616161;
+}
+
+
+=== AuthHeaderStyle.module.css ===
+
+
+.AuthHeader{
+    width: 100%;
+    height: 10vh;
+    background-color: white;
+}
+
+.AuthHeaderContainer{
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding-left: 2%;
+    padding-right: 4%;
+}
+
+.AuthHeaderLogoButtonLink{
+    text-decoration: none;
+    width: 12%;
+    height: 44%;
+    display: inline-block;
+    margin: 1%;
+}
+
+.AuthHeaderLogoButton{
+    width: 100%;
+    height: 100%;
+    background-color: #000033;
+    border-color: #000033;
+    text-align: center;
+    color: white;
+    border-radius: 6px;
+}
+
+.AuthHeaderRightLink{
+    text-decoration: none;
+    width: 12%;
+    height: 44%;
+    display: inline-block;
+    margin: 1%;
+}
+
+.AuthHeaderRightButton{
+    width: 100%;
+    height: 100%;
+    background-color: #000033;
+    border-color: #000033;
+    border-radius: 6px;
+    color: white;
+}
+
+
+=== SignInFormStyle.module.css ===
+
+
+.SignInForm{
+    background-color: white;
+    width: 100%;
+    height: 90vh;
+}
+
+.SignInFormH1{
+    font-size: 4vh;
+}
+
+.SignInFormForm{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2%;
+    width: 100%;
+    height: 64vh;
+}
+
+.SignInFormFormInput{
+    height: 8%;
+    width: 44%;
+    text-indent: 4%;
+    color: #9E9E9E;
+}
+
+.errorMessage {
+    color: red;
+    font-size: 14px;
+    margin: 0;
+    text-align: left;
+    width: 44%;
+  }
+
+.SignInFormFormContainer{
+    height: 4%;
+    width: 44%;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.SignInFormFormForgotPasswordButton{
+    display: inline-block;
+    margin-left: 2%;
+    border: white;
+    background-color: white;
+    font-size: 1.5vh;
+    color: #616161;
+    padding-bottom: 2%;
+}
+
+.SignInFormFormButton{
+    height: 8%;
+    width: 44%;
+    background-color: #000033;
+    border-color: #000033;
+    color: white;
+}
+
+
+=== signInStyle.module.css ===
+
+
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.wrapper {
+    width: 100%;
+    height: 100%;
+    overflow: hidden; 
+    display: flex;
+    flex-direction: row;  
+}
+
+.main{
+    width: 73%;
+    height: 100%;
+}
+
+.SideBackgroundContainer{
+    width: 27%;
+    height: 100vh;
+}
+
+
+=== SignUpFormStyle.module.css ===
+
+
+.SignUpForm{
+    background-color: white;
+    width: 100%;
+    height: 90vh;
+}
+
+.SignInFormH1{
+    font-size: 4vh;
+    margin: 1%;
+}
+
+.SignUpFormForm{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 1.5%;
+    width: 100%;
+    height: 90vh;
+}
+
+.SignUpFormFormInput{
+    height: 6%;
+    width: 44%;
+    text-indent: 4%;
+    color: #9E9E9E;
+}
+
+.SignUpFormFormButton{
+    height: 8%;
+    width: 44%;
+    background-color: #000033;
+    border-color: #000033;
+    color: white;
+}
+
+.SignUpFormFormText{
+    font-size: 1vh;
+    color: #9E9E9E;
+}
+
+.errorMessage {
+    color: red;
+    font-size: 14px;
+    margin: 0;
+    text-align: left;
+    width: 44%;
+  }
+
+
+=== signUpStyle.module.css ===
+
+
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.wrapper {
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: row;
+    overflow: hidden;
+}
+
+.main{
+    width: 73%;
+    height: 100%;
+}
+
+.SideBackgroundContainer{
+    width: 27%;
+    height: 100vh;
+}
+
+
+=== catalogStyle.module.css ===
+
+
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+}
+
+.wrapper {
+    width: 100%;
+    display: flex;
+    flex-direction: row; 
+}
+
+.main{
+    width: 87%;
+    display: flex;
+    flex-direction: column; 
+}
+
+.SideBackgroundContainer{
+    width: 13%;
+    flex-grow: 1;
+}
+
+
+=== CatalogBlockStyle.module.css ===
+
+
+.CatalogBlock{
+    display: flex;
+    flex-direction: column;
+}
+
+.CatalogBlockH1Container{
+    text-align: center;
+}
+
+.CatalogBlockH1{
+    font-size: 4vh;
+}
+
+.CatalogBlockContainer{
+    width: 100%;
+    margin-bottom: 24%;
+}
+
+
+=== CatalogCardStyle.module.css ===
+
+
+.CatalogCard{
+    background-color: #000033;
+    margin: 2%;
+    float: left;
+    width: 20%;
+    height: 69%;
+    border-radius: 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.CatalogCardImgContainer{
+    height: 44%;
+    width: 77%;
+}
+
+.CatalogCardImg{
+    height: 100%;
+    width: 100%;
+}
+
+.CatalogCardInfoContainer{
+    height: 44%;
+    width: 69%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4%;
+}
+
+.CatalogCardH1{
+    color: white;
+    font-size: 2vh;
+    margin-bottom: 0;
+    text-align: left;
+}
+
+.CatalogCardText{
+    color: white;
+    font-size: 1.5vh;
+    margin-top: 0;
+    text-align: left;
+}
+
+.CatalogCardLink{
+    width: 100%;
+    height: 27%;
+    text-align: center;
+}
+
+.CatalogCardButton{
+    width: 100%;
+    height: 100%;
+    color: white;
+    background-color: #4669B0;
+    border-color: #4669B0;
+    border-radius: 14px;
+    font-size: 2vh;
+}
+
+
+=== AuthHeaderStyle.module.css ===
+
+
+.AuthHeader{
+    width: 100%;
+    height: 10vh;
+    background-color: white;
+}
+
+.AuthHeaderContainer{
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding-left: 2%;
+    padding-right: 4%;
+}
+
+.AuthHeaderLogoButtonLink{
+    text-decoration: none;
+    width: 12%;
+    height: 44%;
+    display: inline-block;
+    margin: 1%;
+}
+
+.AuthHeaderLogoButton{
+    width: 100%;
+    height: 100%;
+    background-color: #000033;
+    border-color: #000033;
+    text-align: center;
+    color: white;
+    border-radius: 6px;
+}
+
+.AuthHeaderRightLink{
+    text-decoration: none;
+    width: 12%;
+    height: 44%;
+    display: inline-block;
+    margin: 1%;
+}
+
+.AuthHeaderRightButton{
+    width: 100%;
+    height: 100%;
+    background-color: #000033;
+    border-color: #000033;
+    border-radius: 6px;
+    color: white;
+}
+
+
+=== FooterStyle.module.css ===
+
+
+.Footer{
+    width: 100%;
+    height: 22vh;
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+    justify-content: center;
+    align-items: center;
+    grid-gap: 1%;
+}
+
+.FooterImgContainer{
+    width: 88%;
+    height: 44%;
+}
+
+.FooterImg{
+    margin: 1%;
+    width: auto;
+    height: 8vh;
+}
+
+.FooterButtonContainer{
+    width: 88%;
+    height: 24%;
+    display: flex;
+    flex-direction: row;
+    text-align: center;
+    justify-content: center;
+    align-items: center;
+}
+
+.FooterButtonContainerLink{
+    text-decoration: none;
+}
+
+.FooterButton{
+    width: auto;
+    height: 4vh;
+    background-color: white;
+    border: none;
+    font-size: 1.5vh;
+}
+
+.FooterText{
+    color: gray;
+    font-size: 1vh;
+}
+
+
+=== HeaderStyle.module.css ===
+
+
+.Header{
+    width: 100%;
+    height: 10vh;
+    margin-bottom: 1%;
+}
+
+.HeaderLeft{
+    width: 74%;
+    height: 100%;
+    display: inline-block;
+}
+
+.HeaderLogoButton{
+    float: left;
+    width: 44%;
+    height: 100%;
+    background-color: white;
+    border: none;
+    font-size: 4vh;
+    text-align: left;
+    margin-left: 4%;
+    outline: none;
+}
+
+.HeaderLeftLink{
+    text-decoration: none;
+}
+
+.HeaderLeftButtonContainer {
+    float: right;
+    width: 50%;
+    height: 100%;
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
+    flex-direction: row;
+}
+
+.HeaderLeftButtonContainerLink{
+    text-decoration: none;
+}
+
+.HeaderLeftButton{
+    margin-left: 1%;
+    margin-right: 1%;
+    width: 24%;
+    height: 100%;
+    background-color: white;
+    border: none;
+    color: gray;
+    font-size: 1.4vh;
+}
+
+.HeaderLeftContactButton {
+    margin-left: 1%;
+    margin-right: 1%;
+    width: 50%;
+    height: 100%;
+    background-color: white;
+    border: none;
+    color: gray;
+    font-size: 1.5vh;
+}
+
+.HeaderLeftContactButtonText{
+    display: inline-block;
+    margin: 1%;
+}
+
+.HeaderLeftContactButtonTextInText{
+    display: inline-block;
+    margin: 1%;
+    color: black;
+    font-weight: bold;
+}
+
+.HeaderRight{
+    width: 25%;
+    height: 100%;
+    display: inline-block;
+}
+
+.HeaderRightLink{
+    text-decoration: none;
+}
+
+.HeaderRightButton{
+    float: right;
+    margin: 1%;
+    width: 44%;
+    height: 44%;
+    background-color: #837DBA;
+    border-color: #837DBA;
+    border-radius: 6px;
+    margin-top: 6%;
+    color: white;
+}
+
+
+=== SideBackgroundStyle.module.css ===
+
+
+.SideBackground {
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+}
+
+.SideDarkBackgroundImg{
+    background-image: linear-gradient(to right, rgb(232 232 232 / 10.8%), rgb(72 100 111 / 60%)), url("../../assets/SideBackground/SideDarkBackground.png");
+    background-repeat: no-repeat, no-repeat;
+    background-size: cover, cover;
+    background-position: center, center;
+    height: 100%;
+    width: 100%;
+    transform: scale(1.01);
+    overflow: hidden;
+}
+
+.SideBackgroundImg{
+    background-image: linear-gradient(to right, rgb(232 232 232 / 10.8%), rgb(72 100 111 / 60%)), url("../../assets/SideBackground/SideBackground.png");
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center;
+    height: 100%;
+    width: 100%;
+    transform: scale(1.01);
+    overflow: hidden;
+}
+
+
+=== AboutBlockStyle.module.css ===
+
+
+.AboutBlock{
+    width: 100%;
+    height: 72vh;
+    background-color: white;
+}
+
+.AboutBlockContainer {
+    float: left;
+    width: 49%;
+    height: 98%;
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+    align-items: center;
+    justify-content: center;
+}
+
+.AboutBlockH1{
+    color: black;
+    font-size: 4vh;
+    margin: 4%;
+    margin-left: 20%;
+    text-align: left;
+    font-family: 'Verdana';
+}
+
+.AboutBlockText{
+    color: gray;
+    font-size: 2vh;
+    width: 70%;
+    margin: 1%;
+    text-align: left;
+    margin-left: 11%;
+}
+
+.AboutBlockLink {
+    text-decoration: none;
+    width: 25%;
+    height: 10%;
+    margin: 4%;
+}
+
+.AboutBlockButton{
+    width: 100%;
+    height: 100%; 
+    background-color: #000033;
+    border: none;
+    color: white;
+    font-size: 1.5vh;
+    border-radius: 6px;
+}
+
+.AboutBlockImg{
+    float: right;
+    width: 49%;
+    height: 98%;
+}
+
+
+=== homeStyle.module.css ===
+
+
+* {
+    box-sizing: border-box;
+}
+
+a {
+    color: inherit; 
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    overflow: visible;
+}
+
+.Wrapper {
+    display: flex;
+    flex-direction: column;
+    background-color: white;
+}
+
+
+=== TitleBlockStyle.module.css ===
+
+
+.TitleBlock{
+    width: 100%;
+    height: 72vh;
+}
+
+.TitleBlockImg{
+    float: left;
+    width: 49%;
+    height: 98%;
+}
+
+.TitleBlockContainer{
+    float: right;
+    width: 49%;
+    height: 98%;
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+    align-items: center;
+    background-image: linear-gradient(to right, rgb(232 232 232 / 10.8%), rgb(72 100 111 / 60%)), url("../../assets/SideBackground/SideBackground.png");
+    background-repeat: no-repeat, no-repeat;
+    background-size: cover, cover;
+    background-position: center, center;
+}
+
+.TitleBlockH1{
+    color: white;
+    font-size: 8vh;
+    margin: 4%;
+    margin-left: 20%;
+    text-align: left;
+    font-family: 'Verdana';
+}
+
+.TitleBlockText{
+    color: white;
+    font-size: 3vh;
+    width: 70%;
+    margin: 1%;
+    text-align: left;
+    margin-left: 11%;
+}
+
+.TitleBlockLink{
+    width: 25%;
+    height: 10%;
+    text-decoration: none;
+}
+
+.TitleBlockButton{
+    width: 100%;
+    height: 100%;
+    margin: 4%;
+    background-color: #000033;
+    border-color: #000033;
+    color: white;
+    display: flex;
+    flex-direction: row;
+    text-align: center;
+    justify-content: center;
+    align-items: center;
+    border-radius: 6px;
+}
+
+.TitleBlockButtonText{
+    display: inline-block;
+    font-size: 1.5vh;
+}
+
+.TitleBlockButtonImg{
+    display: inline-block;
+}
+
+
+
+=== CatalogBlockStyle.module.css ===
+
+
+.CatalogBlock{
+    width: 100%;
+    height: 100vh;
+    background-image: linear-gradient(to right, rgb(232 232 232 / 10.8%), rgb(72 100 111 / 60%)), url("../../../assets/SideBackground/SideBackground.png");
+    background-repeat: no-repeat, no-repeat;
+    background-size: cover, cover;
+    background-position: center, center;
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+    justify-content: center;
+    align-items: center;
+}
+
+.CatalogBlockHead{
+    height: 25%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+    justify-content: center;
+    align-items: center;
+}
+
+.CatalogBlockHeadH1{
+    color: white;
+    font-size: 4vh;
+}
+
+.CatalogBlockHeadText{
+    color: white;
+    font-size: 2vh;
+}
+
+.CatalogBlockContainer{
+    height: 69%;
+    width: 69%;
+    text-align: center;
+    margin-left: 14%;
+    margin-right: 12%;
+}
+
+
+=== CatalogCardStyle.module.css ===
+
+
+.CatalogBlockCard{
+    background-color: white;
+    height: 34%;
+    width: 24%;
+    margin: 4%;
+    float: left;
+    border: none;
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+}
+
+.CatalogBlockCardContainer{
+    height: 33%;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.CatalogBlockCardH1{
+    font-size: 3vh;
+    margin: 1%;
+    margin-top: 7%;
+}
+
+.CatalogBlockCardText{
+    display: inline-block;
+    font-size: 1.5vh;
+    margin: 4%;
+    margin-right: 2%;
+}
+
+.CatalogBlockCardTextInText{
+    display: inline-block;
+    font-size: 2vh;
+    margin: 4%;
+    margin-left: 2%;
+}
+
+.CatalogBlockCardContainerLink{
+    text-decoration: none;
+    width: 69%;
+    height: 69%;
+    margin: 1%;
+    margin-bottom: 13%;
+}
+
+.CatalogBlockCardButton{
+    width: 100%;
+    height: 100%;
+    background-color: #000033;
+    border: none;
+    color: white;
+    font-size: 1.5vh;
+    border-radius: 6px;
+}
+
+
+=== WhyUsBlockCardStyle.module.css ===
+
+
+.WhyUsBlockCard{
+    height: 89%;
+    width: 20%;
+    float: left;
+    margin: 2%;
+}
+
+.WhyUsBlockCardImg{
+    width: 100%;
+    height: 54%;
+}
+
+.WhyUsBlockCardH1{
+    margin: 1%;
+}
+
+.WhyUsBlockCardText{
+    color: gray;
+}
+
+
+=== WhyUsBlockStyle.module.css ===
+
+
+.WhyUsBlock{
+    width: 100%;
+    height: 100vh;
+    text-align: center;
+    background-color: #F7F8FA;
+    padding-top: 4%;
+}
+
+.WhyUsBlockHeader{
+    height: 25%;
+    width: 100%;
+    text-align: center;
+}
+
+.WhyUsBlockHeaderH1{
+    font-size: 9vh;
+    margin-top: 0%;
+}
+
+.WhyUsBlockHeaderText{
+    display: inline-block;
+    font-size: 2vh;
+    color:gray;
+}
+
+.WhyUsBlockHeaderTextInText{
+    display: inline-block;
+    font-size: 3vh;
+    margin: 1%;
+}
+
+.WhyUsBlockContainer{
+    height: 70%;
+    width: 88%;
+    margin-left: 8%;
+}
+
+
+=== OrderFormStyle.module.css ===
+
+
+.OrderForm{
+    background-color: white;
+    width: 100%;
+    height: 90vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+.OrderFormH1Container{
+    width: 69%;
+    text-align: center;
+}
+
+.OrderFormH1{
+    font-size: 2.5vh;
+    color: rgb(0, 0, 0, 88%);
+}
+
+.OrderFormForm{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 44%;
+    height: 80vh;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    border-radius: 14px;
+    border:none;
+}
+
+.OrderFormFormInputContainer{
+    width: 69%;
+    height: 15%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: 0.5%;
+}
+
+.OrderFormFormH2{
+    text-align: left;
+    width: 69%;
+    margin: 0;
+    font-size: 1.5vh;
+    margin-bottom: 1%;
+}
+
+.OrderFormFormPassportInputContainer{
+    width: 69%;
+    height: 34%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5%;
+    margin: 0.5%;
+}
+
+.OrderFormFormPassportInput{
+    height: 24%;
+    width: 69%;
+    text-indent: 4%;
+    color: #9E9E9E;
+    border-radius: 14px;
+    border:none;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+}
+
+.OrderFormFormInput{
+    height: 54%;
+    width: 69%;
+    text-indent: 4%;
+    color: #9E9E9E;
+    border:none;
+    border-radius: 14px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    margin: 1%;
+}
+
+.OrderFormFormButtonContainer{
+    height: 10%;
+    width: 22%;
+    margin: 2%;
+}
+
+.OrderFormFormLink{
+    height: 8%;
+    width: 44%;
+}
+
+.OrderFormFormButton{
+    height: 100%;
+    width: 100%;
+    background-color: #4669B0;
+    border-color: #4669B0;
+    border-radius: 14px;
+    color: white;
+}
+
+.errorMessage {
+    color: red;
+    font-size: 14px;
+    margin: 0;
+    text-align: left;
+    width: 69%;
+  }
+
+
+
+=== orderStyle.module.css ===
+
+
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100vh;
+}
+
+.wrapper {
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: row; 
+    overflow: hidden; 
+}
+
+.main{
+    width: 87%;
+    height: 100%;
+}
+
+.SideBackgroundContainer{
+    width: 13%;
+}
+
+
+=== profileStyle.module.css ===
+
+
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100vh;
+}
+
+.wrapper {
+    width: 100%;
+    height: 100vh;
+    background-image: url("../../assets/SideBackground/SideDarkBackground.png");
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.PanelsContainer{
+    width: 80%;
+    height: 80%;
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+}
+
+.SidePanelContainer{
+    background-color: white;
+    border-radius: 14px;
+    width: 31%;
+    height: 54%;
+    display: flex;
+    flex-direction: column;
+    align-items: left;
+    justify-content: center;
+}
+
+.MainPanelContainer{
+    background-color: white;
+    border-radius: 14px;
+    width: 57%;
+    height: 94%;
+    display: flex;
+    flex-direction: column;
+    align-items: left;
+    justify-content: center;
+}
+
+
+=== MainPanelLineStyle.module.css ===
+
+
+.MainPanelLine{
+    width: 100%;
+    height: 14%;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    border-top:#F3F4F6;
+    border-bottom: white;
+    border-right: white;
+    border-left: white;
+    border-style: solid;
+}
+
+.MainPanelLineH1{
+    display: inline-block;
+    font-size: 1.5vh;
+}
+
+.MainPanelLineText{
+    display: inline-block;
+    font-size: 1.4vh;
+}
+
+
+=== MainPanelStyle.module.css ===
+
+
+.MainPanel{
+    height: 90%;
+    width: 69%;
+    margin-left: 10%;
+}
+
+.MainPanelHead{
+    height: 15%;
+    width: 100%;
+    text-align: left;
+}
+
+.MainPanelHeadH1{
+    font-size: 2vh;
+}
+
+.MainPanelHeadText{
+    font-size: 1.5vh;
+}
+
+.MainPanelContainer{
+    height: 70%;
+    width: 100%;
+}
+
+.MainPanelButtonContainer{
+    height: 10%;
+}
+
+.MainPanelButton{
+    height: 69%;
+    width: 44%;
+    border-radius: 14px;
+    background-color: #4669B0;
+    border-color: #4669B0;;
+    color: white;
+}
+
+
+=== SidePanelLineStyle.module.css ===
+
+
+.SidePanelLine{
+    width: 100%;
+    height: 18%;
+    display: flex;
+    flex-direction: row;
+    justify-content: left;
+    align-items: center;
+}
+
+.SidePanelLineImg{
+    display: inline-block;
+    width: 20%;
+    height: 100%;
+}
+
+.SidePanelLineButtonLink{
+    display: inline-block;
+    margin-left: 4%;
+}
+
+.SidePanelLineButton{
+    display: inline-block;
+    background-color: white;
+    border: none;
+    font-size: 1.5vh;
+}
+
+.SidePanelLineButtonContainer{
+    display: inline-block;
+    margin-left: 4%;
+}
+
+
+=== SidePanelStyle.module.css ===
+
+
+.SidePanel{
+    height: 90%;
+    width: 69%;
+    margin-left: 10%;
+}
+
+.SidePanelHead{
+    height: 25%;
+    width: 100%;
+    text-align: left;
+    border-top: white;
+    border-bottom: #F3F4F6;
+    border-right: white;
+    border-left: white;
+    border-style: solid;
+}
+
+.SidePanelHeadH1{
+    font-size: 2vh;
+}
+
+.SidePanelHeadText{
+    font-size: 1.5vh;
+}
+
+.SidePanelContainer{
+    height: 70%;
+    width: 100%;
+}
+
+
+=== SignInFormStyle.module.css ===
+
+
+.SignInForm{
+    background-color: white;
+    width: 100%;
+    height: 90vh;
+}
+
+.SignInFormH1{
+    font-size: 4vh;
+}
+
+.SignInFormForm{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2%;
+    width: 100%;
+    height: 64vh;
+}
+
+.SignInFormFormInput{
+    height: 8%;
+    width: 44%;
+    text-indent: 4%;
+    color: #9E9E9E;
+}
+
+.SignInFormFormContainer{
+    height: 4%;
+    width: 44%;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.SignInFormFormCheckbox{
+    display: inline-block;
+    margin-right: 2%;
+}
+
+.SignInFormFormCheckboxContainer{
+    width: 44%;
+    display: inline-block;
+}
+
+.SignInFormFormCheckboxLabel{
+    display: inline-block;
+    margin-left: 2%;
+    margin-right: 2%;
+    font-size: 1.5vh;
+    color: #616161;
+}
+
+.SignInFormFormForgotPasswordButton{
+    display: inline-block;
+    margin-left: 2%;
+    border: white;
+    background-color: white;
+    font-size: 1.5vh;
+    color: #616161;
+    padding-bottom: 2%;
+}
+
+.SignInFormFormLink{
+    height: 8%;
+    width: 44%;
+}
+
+.SignInFormFormButton{
+    height: 100%;
+    width: 100%;
+    background-color: #000033;
+    border-color: #000033;
+    color: white;
+}
+
+
+=== signInStyle.module.css ===
+
+
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.wrapper {
+    width: 100%;
+    height: 100%;
+    overflow: hidden; 
+    display: flex;
+    flex-direction: row;  
+}
+
+.main{
+    width: 73%;
+    height: 100%;
+}
+
+.SideBackgroundContainer{
+    width: 27%;
+    height: 100vh;
+}
+
+
+=== SignUpFormStyle.module.css ===
+
+
+.SignUpForm{
+    background-color: white;
+    width: 100%;
+    height: 90vh;
+}
+
+.SignInFormH1{
+    font-size: 4vh;
+}
+
+.SignUpFormForm{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 2%;
+    width: 100%;
+    height: 77vh;
+}
+
+.SignUpFormFormInput{
+    height: 8%;
+    width: 44%;
+    text-indent: 4%;
+    color: #9E9E9E;
+}
+
+.SignUpFormFormLink{
+    height: 8%;
+    width: 44%;
+}
+
+.SignUpFormFormButton{
+    height: 100%;
+    width: 100%;
+    background-color: #000033;
+    border-color: #000033;
+    color: white;
+}
+
+.SignUpFormFormText{
+    font-size: 1vh;
+    color: #9E9E9E;
+}
+
+
+=== signUpStyle.module.css ===
+
+
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.wrapper {
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: row;
+    overflow: hidden;
+}
+
+.main{
+    width: 73%;
+    height: 100%;
+}
+
+.SideBackgroundContainer{
+    width: 27%;
+    height: 100vh;
+}
+
+
+=== TarifBlockStyle.module.css ===
+
+
+.TarifBlock{
+    background-color: #000033;
+    width: 88%;
+    height: 69vh;
+    border-radius: 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4%;
+}
+
+.TarifBlockH1Container{
+    text-align: center;
+}
+
+.TarifBlockH1{
+    color: white;
+}
+
+.TarifBlockInfoContainer{
+    height: 60%;
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 4%;
+}
+
+.TarifBlockInfoImgContainer{
+    height: 100%;
+    width: 44%;
+}
+
+.TarifBlockImg{
+    height: 100%;
+    width: 100%;
+}
+
+.TarifBlockInfoTextContainer{
+    height: 100%;
+    width: 44%;
+}
+
+.TarifBlockText{
+    color: white;
+    display: inline-block;
+    font-size: 2.5vh;
+}
+
+.TarifBlockPrice{
+    color: white;
+    display: inline-block;
+    font-size: 2.6vh;
+    font-weight: bold;
+}
+
+.TarifBlockButtonContainer{
+    text-align: center;
+    width: 100%;
+    height: 20%;
+}
+
+.TarifBlockLink{
+    width: 100%;
+    height: 100%;
+}
+
+.TarifBlockButton{
+    width: 69%;
+    height: 69%;
+    color: white;
+    background-color: #4669B0;
+    border-radius: 14px;
+    font-size: 2vh;
+    border: none;
+}
+
+
+=== tarifStyle.module.css ===
+
+
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+}
+
+.wrapper {
+    width: 100%;
+    min-height: 110vh;
+    display: flex;
+    flex-direction: row; 
+}
+
+.main{
+    width: 87%;
+    height: 100%;
+}
+
+.SideBackgroundContainer{
+    width: 13%;
+    flex-grow: 1;
+}
+
+.TarifBlockContainer{
+    height: 77vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+
+=== scrollToElement.js ===
+
+
+export const scrollToElement = (elementName) => {
+    const element = document.getElementById(elementName);
+    if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+    }
+};
+
+
+=== AuthContext.js ===
+
+
+import React, { createContext, useState, useContext } from 'react';
+
+const AuthContext = createContext();
+
+export const AuthProvider = ({ children }) => {
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+    const login = () => {
+        setIsAuthenticated(true);
+        // Здесь можно добавить сохранение в localStorage
+    };
+
+    const logout = () => {
+        setIsAuthenticated(false);
+        // И очистку localStorage при выходе
+    };
+
+    return (
+        <AuthContext.Provider value={{ isAuthenticated, login, logout }}>
+            {children}
+        </AuthContext.Provider>
+    );
+};
+
+export const useAuth = () => {
+    return useContext(AuthContext);
+};
+
+
+=== scrollToElement.js ===
+
+
+export const scrollToElement = (elementName) => {
+    const element = document.getElementById(elementName);
+    if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+    }
+};

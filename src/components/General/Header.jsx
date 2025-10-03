@@ -3,9 +3,11 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 
 import { useAuth } from '../../scripts/AuthContext.js';
+import { usePrefetchPolicies } from '../../hooks'; 
 
 export const Header = () => {
-    const { isAuthenticated} = useAuth();
+    const { isAuthenticated } = useAuth();
+    const prefetchPolicies = usePrefetchPolicies(); 
 
     return (
         <div className={styles.Header} id="Header">
@@ -19,16 +21,29 @@ export const Header = () => {
             <div className={styles.HeaderLeftButtonContainer}>
             
                 <button className={styles.HeaderLeftButton}>
-                    <Link to="/AdminPanel" className={styles.HeaderLeftButtonContainerLink}>Админ панель</Link>
+                    <Link 
+                        to="/AdminPanel" 
+                        className={styles.HeaderLeftButtonContainerLink}
+                        onMouseEnter={prefetchPolicies} 
+                    >
+                        Админ панель
+                    </Link>
                 </button>
 
                 <button className={styles.HeaderLeftButton}>
-                    <Link to="/AboutUs" className={styles.HeaderLeftButtonContainerLink}>О компании</Link>
+                    <Link 
+                        to="/Catalog" 
+                        className={styles.HeaderLeftButtonContainerLink}
+                        onMouseEnter={prefetchPolicies} 
+                    >
+                        Каталог
+                    </Link>
                 </button>
            
                 <button className={styles.HeaderLeftButton}>Помощь</button>
                 <button className={styles.HeaderLeftContactButton}>
-                    <p className={styles.HeaderLeftContactButtonText}>Контакты: </p> <p className={styles.HeaderLeftContactButtonTextInText}>+7 495 123-45-67</p> 
+                    <p className={styles.HeaderLeftContactButtonText}>Контакты: </p> 
+                    <p className={styles.HeaderLeftContactButtonTextInText}>+7 495 123-45-67</p> 
                 </button>
             </div>
         </div>
