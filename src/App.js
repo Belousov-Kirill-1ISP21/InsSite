@@ -1,23 +1,20 @@
 import styles from './css/appStyle.module.css';
 import React from 'react';
 import { BrowserRouter as Router } from 'react-router-dom';
+import { Provider } from 'react-redux';
 import Routes from './Routes'; 
-import { AuthProvider } from './scripts/AuthContext.js';
+import store from './store/store';
 
-function App() {
-
+export function App() {
   return (
-    
-    <div className={styles.App}>
-      <AuthProvider>
+    <Provider store={store}>
+      <div className={styles.App}>
         <Router>
           <Routes />
         </Router>
-      </AuthProvider>
-
-    </div>
+      </div>
+    </Provider>
   );
 }
 
 export default App;
-

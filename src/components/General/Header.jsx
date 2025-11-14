@@ -1,13 +1,22 @@
 import styles from '../../css/General/HeaderStyle.module.css';
 import React from 'react';
 import { Link } from 'react-router-dom';
-
-import { useAuth } from '../../scripts/AuthContext.js';
-import { usePrefetchPolicies } from '../../hooks'; 
+import { useDispatch, useSelector } from 'react-redux';
+import { logout } from '../../store/slices/authSlice';
+import { fetchPolicies } from '../../store/slices/policiesSlice';
 
 export const Header = () => {
-    const { isAuthenticated } = useAuth();
-    const prefetchPolicies = usePrefetchPolicies(); 
+    const dispatch = useDispatch();
+    const isAuthenticated = useSelector(state => state.auth.isAuthenticated);
+
+    const handleLogout = () => {
+        dispatch(logout());
+    };
+
+    const handlePrefetchPolicies = () => {
+        // Prefetch через Redux
+        dispatch(fetchPolicies());
+    };
 
     return (
         <div className={styles.Header} id="Header">
@@ -24,7 +33,7 @@ export const Header = () => {
                     <Link 
                         to="/AdminPanel" 
                         className={styles.HeaderLeftButtonContainerLink}
-                        onMouseEnter={prefetchPolicies} 
+                        onMouseEnter={handlePrefetchPolicies} 
                     >
                         Админ панель
                     </Link>
@@ -34,7 +43,7 @@ export const Header = () => {
                     <Link 
                         to="/Catalog" 
                         className={styles.HeaderLeftButtonContainerLink}
-                        onMouseEnter={prefetchPolicies} 
+                        onMouseEnter={handlePrefetchPolicies} 
                     >
                         Каталог
                     </Link>
@@ -54,7 +63,9 @@ export const Header = () => {
                         <Link to="/Profile" className={styles.HeaderRightLink}>
                             <button className={styles.HeaderRightButton}>Личный кабинет</button>
                         </Link>
-                        
+                        <button className={styles.HeaderRightButton} onClick={handleLogout}>
+                            Выйти
+                        </button>
                     </>
                 ) : (
                     <>
